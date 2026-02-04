@@ -6,7 +6,8 @@
   <title>Tap Leaderboard</title>
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, Arial; height: 100vh; }
+    body { margin: 0; font-family: system-ui, Arial; height: 100vh; background:#fafafa; }
+
     header{
       position: fixed; top: 0; left: 0; right: 0;
       display: flex; align-items: center; justify-content: space-between;
@@ -18,6 +19,7 @@
     nav a{ text-decoration:none; color:#111; padding:6px 10px; border-radius:10px; }
     nav a:hover{ background:#f3f3f3; }
     .pill{ font-size: 12px; opacity: .7; }
+
     main{
       height: 100vh;
       display: grid;
@@ -25,35 +27,138 @@
       padding-top: 54px;
       user-select: none;
       cursor: pointer;
+      position: relative;
+      overflow: hidden;
     }
+    main.blocked{ cursor: not-allowed; }
+
     .card{
+      position: relative;
       text-align:center;
       padding: 24px;
       border: 1px solid #eee;
-      border-radius: 16px;
-      box-shadow: 0 6px 24px rgba(0,0,0,.06);
+      border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.07);
       max-width: 520px;
       width: calc(100% - 48px);
       background: #fff;
+      z-index: 5;
     }
     .name{ font-size: 22px; font-weight: 800; margin-top: 4px; }
-    .count{ font-size: 72px; font-weight: 900; margin: 10px 0; }
-    .hint{ opacity: .7; }
-    .btnRow{ margin-top: 12px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
-    button{
-      border: 1px solid #ddd; background:#fff; padding:10px 14px;
-      border-radius: 12px; cursor:pointer; font-weight:600;
+
+    .countWrap{
+      position: relative;
+      margin: 14px auto 8px;
+      width: 280px;
+      height: 160px;
+      display: grid;
+      place-items: center;
     }
-    button:hover{ background:#f7f7f7; }
+    .count{
+      font-size: 72px;
+      font-weight: 950;
+      margin: 0;
+      line-height: 1;
+    }
+    .hint { opacity:.7; margin-top: 10px; }
+
+    /* WARNING */
+    .warning{
+      position: fixed;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: 950;
+      font-size: 34px;
+      letter-spacing: 1px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      color: #111;
+      background: #ffe66b;
+      border: 2px solid #111;
+      box-shadow: 0 10px 26px rgba(0,0,0,.16);
+      z-index: 50;
+      display: none;
+    }
+    .warning.show{ display:block; animation: pop .18s ease-out; }
+    @keyframes pop {
+      from{ transform: translateX(-50%) scale(.92); opacity:.2 }
+      to{ transform: translateX(-50%) scale(1); opacity:1 }
+    }
+
+    .duckInstruction{
+      position: fixed;
+      top: 112px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+      display: none;
+      font-weight: 950;
+      font-size: 15px;
+      background: rgba(255,255,255,.97);
+      border: 1px solid #eee;
+      border-radius: 999px;
+      padding: 8px 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,.10);
+      white-space: nowrap;
+    }
+    .duckInstruction.show{ display:block; }
+
+    /* Ducks layer */
+    .duckLayer{
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 25;
+    }
+    .duck{
+      position: absolute;
+      pointer-events: auto;
+      cursor: pointer;
+      font-size: 44px;
+      filter: drop-shadow(0 10px 14px rgba(0,0,0,.15));
+      user-select: none;
+      will-change: transform, left, top, opacity;
+    }
+
+    /* Hugging spots around the counter */
+    .hug1{ top: 18px; left: 8px; transform: rotate(-10deg); }
+    .hug2{ top: 10px; right: 10px; transform: rotate(12deg); }
+    .hug3{ bottom: 10px; left: 18px; transform: rotate(10deg); }
+    .hug4{ bottom: 8px; right: 18px; transform: rotate(-8deg); }
+    .hug5{ top: 52px; left: -6px; transform: rotate(-2deg); }
+
+    /* Walking in animation (from offscreen to a target spot) */
+    .walking{
+      animation: walkIn 950ms ease-out forwards;
+    }
+    @keyframes walkIn{
+      0%   { transform: translate(var(--fromX), var(--fromY)) scale(.95); opacity: .8; }
+      100% { transform: translate(0,0) scale(1); opacity: 1; }
+    }
+
+    /* Walk away (sad) */
+    .leaving{
+      animation: walkAway 900ms ease-in forwards;
+    }
+    @keyframes walkAway{
+      0%   { opacity: 1; transform: translate(0,0) scale(1); }
+      70%  { opacity: 1; transform: translate(90px,-40px) scale(.95); }
+      100% { opacity: 0; transform: translate(160px,-90px) scale(.85); }
+    }
+
+    /* Tiny toast */
     .toast{
       position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
       background: #111; color:#fff; padding:10px 14px; border-radius: 999px;
       font-size: 13px; opacity: 0; pointer-events:none; transition: opacity .2s;
+      z-index: 60;
     }
     .toast.show{ opacity: 1; }
   </style>
 </head>
 <body>
+
   <header>
     <div class="brand">Tap Leaderboard</div>
     <nav>
@@ -65,45 +170,45 @@
     </nav>
   </header>
 
+  <div class="warning" id="warning">DUCKS INVADING!!</div>
+  <div class="duckInstruction" id="instruction">
+    TAP / HIT / TOUCH / SLAP / SMACK / TAP THE DUCK TO LEAVE :(
+  </div>
+
   <main id="tapArea">
+    <div class="duckLayer" id="duckLayer"></div>
+
     <div class="card">
       <div class="pill" id="statusLine">Not logged in</div>
       <div class="name" id="displayName">Guest</div>
-      <div class="count" id="count">0</div>
-      <div class="hint" id="hint">Log in to be counted on the leaderboard.</div>
 
-      <div class="btnRow">
-        <button id="goAuth">Login / Sign up</button>
-        <button id="goLeaderboard">View Leaderboard</button>
+      <div class="countWrap" id="countWrap">
+        <div class="count" id="count">0</div>
       </div>
+
+      <div class="hint" id="hint">Log in to be counted on the leaderboard.</div>
     </div>
   </main>
 
   <div class="toast" id="toast"></div>
 
   <script>
-    // ---------- Storage helpers ----------
-    const LS_USERS = "tap_users";        // { username: {displayName, password, taps} }
-    const LS_SESSION = "tap_session";    // { username }
+    // --------- localStorage (same as earlier demo) ----------
+    const LS_USERS = "tap_users";
+    const LS_SESSION = "tap_session";
+    function loadUsers(){ return JSON.parse(localStorage.getItem(LS_USERS) || "{}"); }
+    function saveUsers(users){ localStorage.setItem(LS_USERS, JSON.stringify(users)); }
+    function getSession(){ return JSON.parse(localStorage.getItem(LS_SESSION) || "null"); }
+    function setSession(sess){ localStorage.setItem(LS_SESSION, JSON.stringify(sess)); }
+    function clearSession(){ localStorage.removeItem(LS_SESSION); }
 
-    function loadUsers() {
-      return JSON.parse(localStorage.getItem(LS_USERS) || "{}");
-    }
-    function saveUsers(users) {
-      localStorage.setItem(LS_USERS, JSON.stringify(users));
-    }
-    function getSession() {
-      return JSON.parse(localStorage.getItem(LS_SESSION) || "null");
-    }
-    function setSession(sess) {
-      localStorage.setItem(LS_SESSION, JSON.stringify(sess));
-    }
-    function clearSession() {
-      localStorage.removeItem(LS_SESSION);
-    }
-
-    // ---------- UI ----------
+    // --------- UI refs ----------
     const tapArea = document.getElementById("tapArea");
+    const duckLayer = document.getElementById("duckLayer");
+    const warning = document.getElementById("warning");
+    const instruction = document.getElementById("instruction");
+    const countWrap = document.getElementById("countWrap");
+
     const navUser = document.getElementById("navUser");
     const authLink = document.getElementById("authLink");
     const logoutLink = document.getElementById("logoutLink");
@@ -113,26 +218,125 @@
     const countEl = document.getElementById("count");
     const hintEl = document.getElementById("hint");
 
-    const goAuth = document.getElementById("goAuth");
-    const goLeaderboard = document.getElementById("goLeaderboard");
-
     const toast = document.getElementById("toast");
-    function showToast(msg) {
+    function showToast(msg){
       toast.textContent = msg;
       toast.classList.add("show");
       setTimeout(() => toast.classList.remove("show"), 900);
     }
 
-    function refresh() {
+    // --------- Duck invasion logic ----------
+    const TAP_STEP = 75;
+    const DUCKS_PER_INVASION = 3;
+    let lastSpawnCheckpoint = 0;
+
+    let ducks = [];            // active duck elements
+    let lockAfterArrival = false; // set true when invasion starts; lock only after arrival
+    let blocked = false;       // background locked
+
+    function setBlocked(isBlocked){
+      blocked = isBlocked;
+      tapArea.classList.toggle("blocked", blocked);
+      warning.classList.toggle("show", blocked);
+      instruction.classList.toggle("show", blocked);
+    }
+
+    function activeDuckCount(){
+      return ducks.length;
+    }
+
+    function pickHugClass(i){
+      const classes = ["hug1","hug2","hug3","hug4","hug5"];
+      return classes[i % classes.length];
+    }
+
+    function createSadSound(){
+      // simple "sad" descending beep
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "triangle";
+      o.frequency.setValueAtTime(420, ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.22);
+      g.gain.setValueAtTime(0.0001, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.26);
+      o.connect(g); g.connect(ctx.destination);
+      o.start();
+      o.stop(ctx.currentTime + 0.28);
+      o.onended = () => ctx.close();
+    }
+
+    function spawnInvasion(){
+      if (lockAfterArrival || blocked) return; // already invading/blocked
+      lockAfterArrival = true; // invasion started, but NOT blocked yet
+
+      for (let i = 0; i < DUCKS_PER_INVASION; i++){
+        const duck = document.createElement("div");
+        duck.className = "duck";
+        duck.textContent = "🦆";
+
+        // place duck at countWrap position (hug area) but start animation from offscreen
+        // We'll attach duck into countWrap so "hug classes" position relative to it.
+        const hugClass = pickHugClass(activeDuckCount() + i);
+        duck.classList.add(hugClass);
+
+        // set walking-in animation offset
+        // random start offscreen direction
+        const fromLeft = Math.random() < 0.5;
+        const fromTop = Math.random() < 0.5;
+
+        const fromX = fromLeft ? "-220px" : "220px";
+        const fromY = fromTop ? "-160px" : "160px";
+
+        duck.style.setProperty("--fromX", fromX);
+        duck.style.setProperty("--fromY", fromY);
+        duck.classList.add("walking");
+
+        // click duck to remove (sad + walk away)
+        duck.addEventListener("pointerdown", (e) => {
+          e.stopPropagation();
+          if (duck.classList.contains("leaving")) return;
+
+          createSadSound();
+          duck.classList.remove("walking");
+          duck.classList.add("leaving");
+
+          setTimeout(() => {
+            duck.remove();
+            ducks = ducks.filter(d => d !== duck);
+            // If no ducks left -> unlock
+            if (ducks.length === 0){
+              lockAfterArrival = false;
+              setBlocked(false);
+            }
+          }, 900);
+        });
+
+        // Put duck inside the countWrap (so it "hugs" the counter)
+        countWrap.appendChild(duck);
+        ducks.push(duck);
+
+        // After walk-in ends -> if we are still in invasion mode, lock now
+        setTimeout(() => {
+          duck.classList.remove("walking");
+          // lock happens after arrival/hug (first time any duck arrives)
+          if (lockAfterArrival && !blocked){
+            setBlocked(true);
+          }
+        }, 950);
+      }
+    }
+
+    // --------- Auth / profile ----------
+    function refresh(){
       const sess = getSession();
       const users = loadUsers();
 
-      if (!sess || !users[sess.username]) {
-        // guest
+      if (!sess || !users[sess.username]){
         navUser.textContent = "";
         authLink.style.display = "inline";
         logoutLink.style.display = "none";
-
         statusLine.textContent = "Not logged in";
         displayNameEl.textContent = "Guest";
         countEl.textContent = "0";
@@ -141,48 +345,69 @@
       }
 
       const u = users[sess.username];
-      navUser.textContent = `Hi, ${u.displayName}`;
+      navUser.textContent = `Hi, ${u.displayName || sess.username}`;
       authLink.style.display = "none";
       logoutLink.style.display = "inline";
 
-      statusLine.textContent = "Tap anywhere!";
-      displayNameEl.textContent = u.displayName;
+      statusLine.textContent = blocked ? "Ducks are hugging the counter!" : "Tap anywhere!";
+      displayNameEl.textContent = u.displayName || sess.username;
       countEl.textContent = String(u.taps || 0);
-      hintEl.textContent = "Tap/click anywhere on the page to add +1";
+      hintEl.textContent = blocked
+        ? "You can't tap the background. Tap the ducks to make them leave :("
+        : "Tap/click anywhere to add +1";
     }
 
-    // Tap logic
+    logoutLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      clearSession();
+      setBlocked(false);
+      lockAfterArrival = false;
+      // remove ducks if any
+      ducks.forEach(d => d.remove());
+      ducks = [];
+      refresh();
+      showToast("Logged out");
+    });
+
+    // --------- Tap logic ----------
     tapArea.addEventListener("pointerdown", (e) => {
-      // ignore clicking nav links/buttons
+      // ignore header clicks
       const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
       if (["a","button","input","label"].includes(tag)) return;
 
       const sess = getSession();
       const users = loadUsers();
-
-      if (!sess || !users[sess.username]) {
+      if (!sess || !users[sess.username]){
         showToast("Log in first to start counting!");
         return;
       }
 
+      // If blocked, don't allow background taps
+      if (blocked){
+        showToast("Tap the ducks to make them leave :(");
+        return;
+      }
+
+      // Add tap
       users[sess.username].taps = (users[sess.username].taps || 0) + 1;
       saveUsers(users);
-
-      // instant UI update
       countEl.textContent = String(users[sess.username].taps);
-    });
 
-    goAuth.addEventListener("click", () => location.href = "auth.html");
-    goLeaderboard.addEventListener("click", () => location.href = "leaderboard.html");
+      // Every 75 taps -> spawn invasion (but lock only after arrival)
+      const taps = users[sess.username].taps;
+      const checkpoint = Math.floor(taps / TAP_STEP);
+      if (checkpoint > lastSpawnCheckpoint){
+        lastSpawnCheckpoint = checkpoint;
+        spawnInvasion();
+      }
 
-    logoutLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      clearSession();
       refresh();
-      showToast("Logged out");
     });
 
+    // Init: ensure no warning shown at start
+    setBlocked(false);
     refresh();
   </script>
+
 </body>
 </html>
