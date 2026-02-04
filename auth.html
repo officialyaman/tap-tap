@@ -195,19 +195,46 @@
     </nav>
   </header>
 
-  <main>
-    <div class="wrap">
-      <div class="card">
-        <h2>Sign up</h2>
-        <label>Username</label>
-        <input id="suUser" placeholder="e.g. user123" />
-        <label>Display name</label>
-        <input id="suName" placeholder="e.g. User" />
-        <label>Password</label>
-        <input id="suPass" type="password" placeholder="Create a password" />
-        <button id="signupBtn">Create account</button>
-        <div class="msg" id="suMsg"></div>
-        <div class="note">This demo uses localStorage (device-only). For a real global leaderboard, use a database.</div>
+ <main>
+  <div class="wrap">
+    <div class="card">
+      <h2>Sign up</h2>
+
+      <label for="suUser">Username</label>
+      <input
+        id="suUser"
+        type="text"
+        placeholder="Enter a username"
+        autocomplete="username"
+      />
+
+      <label for="suName">Display name</label>
+      <input
+        id="suName"
+        type="text"
+        placeholder="Enter a display name"
+      />
+
+      <label for="suPass">Password</label>
+      <input
+        id="suPass"
+        type="password"
+        placeholder="Create a password"
+        autocomplete="new-password"
+      />
+
+      <button id="signupBtn">Create account</button>
+
+      <div class="msg" id="suMsg"></div>
+
+      <div class="note">
+        This demo uses localStorage (device-only). For a real global leaderboard,
+        connect a database.
+      </div>
+    </div>
+  </div>
+</main>
+
       </div>
 
       <div class="card">
