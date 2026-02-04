@@ -1,251 +1,137 @@
 <!doctype html>
 <html lang="en">
-<head><!doctype html>
-<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Leaderboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login / Sign up</title>
+
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, Arial; min-height: 100vh; background:#fafafa; }
-    header{
-      display:flex; justify-content:space-between; align-items:center;
-      padding: 12px 16px; background:#fff; border-bottom:1px solid #eee;
+    body {
+      margin: 0;
+      font-family: system-ui, Arial;
+      min-height: 100vh;
+      background: #fafafa;
     }
-    nav{ display:flex; gap:12px; align-items:center; }
-    nav a{ text-decoration:none; color:#111; padding:6px 10px; border-radius:10px; }
-    nav a:hover{ background:#f3f3f3; }
-    .pill{ font-size: 12px; opacity: .7; }
-    main{ padding: 24px; display:grid; place-items:center; }
-    .card{
-      width: min(720px, 100%);
-      background:#fff; border:1px solid #eee; border-radius:16px; padding:18px;
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: #fff;
+      border-bottom: 1px solid #eee;
+    }
+    nav a {
+      text-decoration: none;
+      color: #111;
+      padding: 6px 10px;
+      border-radius: 10px;
+    }
+    nav a:hover {
+      background: #f3f3f3;
+    }
+    main {
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .wrap {
+      display: grid;
+      gap: 16px;
+      width: min(900px, 100%);
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 16px;
+      padding: 18px;
       box-shadow: 0 6px 24px rgba(0,0,0,.05);
     }
-    h2{ margin: 0 0 14px; }
-    table{ width:100%; border-collapse: collapse; }
-    th, td{ text-align:left; padding: 10px 8px; border-bottom: 1px solid #eee; }
-    th{ font-size: 12px; text-transform: uppercase; letter-spacing:.06em; opacity:.6; }
-    .rank{ width:70px; }
-    .taps{ width:120px; text-align:right; }
-    td.taps{ font-weight:800; }
-    .empty{ opacity:.7; padding: 10px 0; }
+    h2 {
+      margin: 0 0 10px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      opacity: .75;
+      margin-top: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #ddd;
+      margin-top: 6px;
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #ddd;
+      background: #111;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:hover { opacity: .92; }
+    .msg { margin-top: 10px; font-size: 13px; }
+    .ok { color: #0a7; }
+    .bad { color: #c22; }
+    .note {
+      font-size: 12px;
+      opacity: .65;
+      margin-top: 10px;
+    }
   </style>
 </head>
+
 <body>
   <header>
     <div style="font-weight:800;">Tap Leaderboard</div>
     <nav>
       <a href="index.html">Home</a>
       <a href="leaderboard.html">Leaderboard</a>
-      <span class="pill" id="navUser"></span>
-      <a href="auth.html" id="authLink">Login / Sign up</a>
-      <a href="#" id="logoutLink" style="display:none;">Logout</a>
     </nav>
   </header>
 
   <main>
-    <div class="card">
-      <h2>Leaderboard</h2>
-      <div id="content"></div>
-    </div>
-  </main>
+    <div class="wrap">
 
-  <script>
-    const LS_USERS = "tap_users";
-    const LS_SESSION = "tap_session";
+      <!-- SIGN UP -->
+      <div class="card">
+        <h2>Sign up</h2>
 
-    function loadUsers() {
-      return JSON.parse(localStorage.getItem(LS_USERS) || "{}");
-    }
-    function getSession() {
-      return JSON.parse(localStorage.getItem(LS_SESSION) || "null");
-    }
-    function clearSession() {
-      localStorage.removeItem(LS_SESSION);
-    }
+        <label>Username</label>
+        <input id="suUser" placeholder="user3432" />
 
-    const navUser = document.getElementById("navUser");
-    const authLink = document.getElementById("authLink");
-    const logoutLink = document.getElementById("logoutLink");
-    const content = document.getElementById("content");
+        <label>Password</label>
+        <input id="suPass" type="password" placeholder="Create a password" />
 
-    function refreshNav() {
-      const sess = getSession();
-      const users = loadUsers();
-      if (sess && users[sess.username]) {
-        navUser.textContent = `Hi, ${users[sess.username].displayName}`;
-        authLink.style.display = "none";
-        logoutLink.style.display = "inline";
-      } else {
-        navUser.textContent = "";
-        authLink.style.display = "inline";
-        logoutLink.style.display = "none";
-      }
-    }
+        <button id="signupBtn">Create account</button>
+        <div class="msg" id="suMsg"></div>
 
-    logoutLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      clearSession();
-      refreshNav();
-      render();
-    });
-
-    function render() {
-      const users = loadUsers();
-      const rows = Object.entries(users).map(([username, u]) => ({
-        username,
-        displayName: u.displayName || username,
-        taps: Number(u.taps || 0)
-      }));
-
-      rows.sort((a, b) => b.taps - a.taps);
-
-      if (rows.length === 0) {
-        content.innerHTML = `<div class="empty">No users yet. Go to <a href="auth.html">Sign up</a> and start tapping.</div>`;
-        return;
-      }
-
-      const top = rows.slice(0, 50);
-
-      let html = `
-        <table>
-          <thead>
-            <tr>
-              <th class="rank">Rank</th>
-              <th>Name</th>
-              <th class="taps">Taps</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
-
-      top.forEach((r, i) => {
-        html += `
-          <tr>
-            <td class="rank">#${i + 1}</td>
-            <td>${escapeHtml(r.displayName)}</td>
-            <td class="taps">${r.taps}</td>
-          </tr>
-        `;
-      });
-
-      html += `</tbody></table>`;
-      content.innerHTML = html;
-    }
-
-    function escapeHtml(str) {
-      return String(str)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    refreshNav();
-    render();
-  </script>
-</body>
-</html>
-
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Login / Sign up</title>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, Arial; min-height: 100vh; background:#fafafa; }
-    header{
-      display:flex; justify-content:space-between; align-items:center;
-      padding: 12px 16px; background:#fff; border-bottom:1px solid #eee;
-    }
-    nav a{ text-decoration:none; color:#111; padding:6px 10px; border-radius:10px; }
-    nav a:hover{ background:#f3f3f3; }
-    main{ display:grid; place-items:center; padding: 24px; }
-    .wrap{ display:grid; gap:16px; width: min(900px, 100%); grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-    .card{
-      background:#fff; border:1px solid #eee; border-radius:16px; padding:18px;
-      box-shadow: 0 6px 24px rgba(0,0,0,.05);
-    }
-    h2{ margin: 0 0 10px; }
-    label{ display:block; font-size: 13px; opacity:.75; margin-top: 10px; }
-    input{
-      width:100%; padding:10px 12px; border-radius:12px;
-      border:1px solid #ddd; margin-top:6px; font-size: 14px;
-    }
-    button{
-      width:100%; margin-top: 14px; padding:10px 12px;
-      border-radius:12px; border:1px solid #ddd; background:#111; color:#fff;
-      font-weight:700; cursor:pointer;
-    }
-    button:hover{ opacity:.92; }
-    .msg{ margin-top: 10px; font-size: 13px; }
-    .ok{ color: #0a7; }
-    .bad{ color: #c22; }
-    .note{ font-size: 12px; opacity:.65; margin-top: 10px; line-height:1.4; }
-  </style>
-</head>
-<body>
-  <header>
-    <div style="font-weight:800;">Tap Leaderboard</div>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="leaderboard.html">Leaderboard</a>
-    </nav>
-  </header>
-
- <main>
-  <div class="wrap">
-    <div class="card">
-      <h2>Sign up</h2>
-
-      <label for="suUser">Username</label>
-      <input
-        id="suUser"
-        type="text"
-        placeholder="Enter a username"
-        autocomplete="username"
-      />
-
-      <label for="suName">Display name</label>
-      <input
-        id="suName"
-        type="text"
-        placeholder="Enter a display name"
-      />
-
-      <label for="suPass">Password</label>
-      <input
-        id="suPass"
-        type="password"
-        placeholder="Create a password"
-        autocomplete="new-password"
-      />
-
-      <button id="signupBtn">Create account</button>
-
-      <div class="msg" id="suMsg"></div>
-
-      <div class="note">
-        This demo uses localStorage (device-only). For a real global leaderboard,
-        connect a database.
-      </div>
-    </div>
-  </div>
-</main>
-
+        <div class="note">
+          No real names required. Username only.
+        </div>
       </div>
 
+      <!-- LOGIN -->
       <div class="card">
         <h2>Log in</h2>
+
         <label>Username</label>
-        <input id="liUser" placeholder="Your username" />
+        <input id="liUser" placeholder="user3432" />
+
         <label>Password</label>
         <input id="liPass" type="password" placeholder="Your password" />
+
         <button id="loginBtn">Log in</button>
         <div class="msg" id="liMsg"></div>
       </div>
+
     </div>
   </main>
 
@@ -263,54 +149,45 @@
       localStorage.setItem(LS_SESSION, JSON.stringify(sess));
     }
 
-    // Sign up
-    const suUser = document.getElementById("suUser");
-    const suName = document.getElementById("suName");
-    const suPass = document.getElementById("suPass");
-    const signupBtn = document.getElementById("signupBtn");
-    const suMsg = document.getElementById("suMsg");
-
-    signupBtn.addEventListener("click", () => {
+    // SIGN UP
+    signupBtn.onclick = () => {
       const username = suUser.value.trim();
-      const displayName = suName.value.trim();
       const password = suPass.value;
 
-      if (!username || !displayName || !password) {
+      if (!username || !password) {
         suMsg.className = "msg bad";
-        suMsg.textContent = "Please fill all fields.";
+        suMsg.textContent = "Fill all fields.";
         return;
       }
 
       const users = loadUsers();
       if (users[username]) {
         suMsg.className = "msg bad";
-        suMsg.textContent = "That username is already taken.";
+        suMsg.textContent = "Username already exists.";
         return;
       }
 
-      users[username] = { displayName, password, taps: 0 };
+      users[username] = {
+        displayName: username,
+        password: password,
+        taps: 0
+      };
+
       saveUsers(users);
       setSession({ username });
 
       suMsg.className = "msg ok";
-      suMsg.textContent = "Account created! Redirecting...";
+      suMsg.textContent = "Account created!";
       setTimeout(() => location.href = "index.html", 600);
-    });
+    };
 
-    // Log in
-    const liUser = document.getElementById("liUser");
-    const liPass = document.getElementById("liPass");
-    const loginBtn = document.getElementById("loginBtn");
-    const liMsg = document.getElementById("liMsg");
-
-    loginBtn.addEventListener("click", () => {
+    // LOGIN
+    loginBtn.onclick = () => {
       const username = liUser.value.trim();
       const password = liPass.value;
 
       const users = loadUsers();
-      const u = users[username];
-
-      if (!u || u.password !== password) {
+      if (!users[username] || users[username].password !== password) {
         liMsg.className = "msg bad";
         liMsg.textContent = "Wrong username or password.";
         return;
@@ -318,9 +195,9 @@
 
       setSession({ username });
       liMsg.className = "msg ok";
-      liMsg.textContent = "Logged in! Redirecting...";
+      liMsg.textContent = "Logged in!";
       setTimeout(() => location.href = "index.html", 600);
-    });
+    };
   </script>
 </body>
 </html>
