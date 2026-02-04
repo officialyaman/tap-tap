@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tap Leaderboard</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, Arial; height: 100vh; }
+    header{
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; background: #fff; border-bottom: 1px solid #eee;
+      z-index: 10;
+    }
+    .brand{ font-weight: 800; }
+    nav{ display:flex; gap:12px; align-items:center; }
+    nav a{ text-decoration:none; color:#111; padding:6px 10px; border-radius:10px; }
+    nav a:hover{ background:#f3f3f3; }
+    .pill{ font-size: 12px; opacity: .7; }
+    main{
+      height: 100vh;
+      display: grid;
+      place-items: center;
+      padding-top: 54px;
+      user-select: none;
+      cursor: pointer;
+    }
+    .card{
+      text-align:center;
+      padding: 24px;
+      border: 1px solid #eee;
+      border-radius: 16px;
+      box-shadow: 0 6px 24px rgba(0,0,0,.06);
+      max-width: 520px;
+      width: calc(100% - 48px);
+      background: #fff;
+    }
+    .name{ font-size: 22px; font-weight: 800; margin-top: 4px; }
+    .count{ font-size: 72px; font-weight: 900; margin: 10px 0; }
+    .hint{ opacity: .7; }
+    .btnRow{ margin-top: 12px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+    button{
+      border: 1px solid #ddd; background:#fff; padding:10px 14px;
+      border-radius: 12px; cursor:pointer; font-weight:600;
+    }
+    button:hover{ background:#f7f7f7; }
+    .toast{
+      position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+      background: #111; color:#fff; padding:10px 14px; border-radius: 999px;
+      font-size: 13px; opacity: 0; pointer-events:none; transition: opacity .2s;
+    }
+    .toast.show{ opacity: 1; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Tap Leaderboard</div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <span class="pill" id="navUser"></span>
+      <a href="auth.html" id="authLink">Login / Sign up</a>
+      <a href="#" id="logoutLink" style="display:none;">Logout</a>
+    </nav>
+  </header>
+
+  <main id="tapArea">
+    <div class="card">
+      <div class="pill" id="statusLine">Not logged in</div>
+      <div class="name" id="displayName">Guest</div>
+      <div class="count" id="count">0</div>
+      <div class="hint" id="hint">Log in to be counted on the leaderboard.</div>
+
+      <div class="btnRow">
+        <button id="goAuth">Login / Sign up</button>
+        <button id="goLeaderboard">View Leaderboard</button>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---------- Storage helpers ----------
+    const LS_USERS = "tap_users";        // { username: {displayName, password, taps} }
+    const LS_SESSION = "tap_session";    // { username }
+
+    function loadUsers() {
+      return JSON.parse(localStorage.getItem(LS_USERS) || "{}");
+    }
+    function saveUsers(users) {
+      localStorage.setItem(LS_USERS, JSON.stringify(users));
+    }
+    function getSession() {
+      return JSON.parse(localStorage.getItem(LS_SESSION) || "null");
+    }
+    function setSession(sess) {
+      localStorage.setItem(LS_SESSION, JSON.stringify(sess));
+    }
+    function clearSession() {
+      localStorage.removeItem(LS_SESSION);
+    }
+
+    // ---------- UI ----------
+    const tapArea = document.getElementById("tapArea");
+    const navUser = document.getElementById("navUser");
+    const authLink = document.getElementById("authLink");
+    const logoutLink = document.getElementById("logoutLink");
+
+    const statusLine = document.getElementById("statusLine");
+    const displayNameEl = document.getElementById("displayName");
+    const countEl = document.getElementById("count");
+    const hintEl = document.getElementById("hint");
+
+    const goAuth = document.getElementById("goAuth");
+    const goLeaderboard = document.getElementById("goLeaderboard");
+
+    const toast = document.getElementById("toast");
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 900);
+    }
+
+    function refresh() {
+      const sess = getSession();
+      const users = loadUsers();
+
+      if (!sess || !users[sess.username]) {
+        // guest
+        navUser.textContent = "";
+        authLink.style.display = "inline";
+        logoutLink.style.display = "none";
+
+        statusLine.textContent = "Not logged in";
+        displayNameEl.textContent = "Guest";
+        countEl.textContent = "0";
+        hintEl.textContent = "Log in to be counted on the leaderboard.";
+        return;
+      }
+
+      const u = users[sess.username];
+      navUser.textContent = `Hi, ${u.displayName}`;
+      authLink.style.display = "none";
+      logoutLink.style.display = "inline";
+
+      statusLine.textContent = "Tap anywhere!";
+      displayNameEl.textContent = u.displayName;
+      countEl.textContent = String(u.taps || 0);
+      hintEl.textContent = "Tap/click anywhere on the page to add +1";
+    }
+
+    // Tap logic
+    tapArea.addEventListener("pointerdown", (e) => {
+      // ignore clicking nav links/buttons
+      const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+      if (["a","button","input","label"].includes(tag)) return;
+
+      const sess = getSession();
+      const users = loadUsers();
+
+      if (!sess || !users[sess.username]) {
+        showToast("Log in first to start counting!");
+        return;
+      }
+
+      users[sess.username].taps = (users[sess.username].taps || 0) + 1;
+      saveUsers(users);
+
+      // instant UI update
+      countEl.textContent = String(users[sess.username].taps);
+    });
+
+    goAuth.addEventListener("click", () => location.href = "auth.html");
+    goLeaderboard.addEventListener("click", () => location.href = "leaderboard.html");
+
+    logoutLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      clearSession();
+      refresh();
+      showToast("Logged out");
+    });
+
+    refresh();
+  </script>
+</body>
+</html>
