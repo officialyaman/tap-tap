@@ -329,6 +329,13 @@
     }
 
     // --------- Auth / profile ----------
+    const ADMIN_USERNAME = "yamoon";
+
+function isAdmin() {
+  const sess = getSession();
+  return sess && sess.username === ADMIN_USERNAME;
+}
+
     function refresh(){
       const sess = getSession();
       const users = loadUsers();
