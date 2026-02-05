@@ -6,19 +6,57 @@
   <title>Tap Leaderboard</title>
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, Arial; height: 100vh; background:#fafafa; }
+    body { margin: 0; font-family: system-ui, Arial; height: 100vh; background:#fafafa; color:#111; transition: background .25s, color .25s; }
 
     header{
       position: fixed; top: 0; left: 0; right: 0;
       display: flex; align-items: center; justify-content: space-between;
       padding: 12px 16px; background: #fff; border-bottom: 1px solid #eee;
       z-index: 10;
+      transition: background .25s, border-color .25s;
     }
     .brand{ font-weight: 800; }
     nav{ display:flex; gap:12px; align-items:center; }
     nav a{ text-decoration:none; color:#111; padding:6px 10px; border-radius:10px; }
     nav a:hover{ background:#f3f3f3; }
     .pill{ font-size: 12px; opacity: .7; }
+
+    /* ---------- Theme Switch ---------- */
+    .themeSwitch{
+      position: relative;
+      width: 46px;
+      height: 24px;
+      display: inline-block;
+      margin-left: 12px;
+    }
+    .themeSwitch input{ display:none; }
+
+    .themeSwitch .slider{
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #ddd;
+      border-radius: 999px;
+      transition: .25s;
+    }
+    .themeSwitch .slider::before{
+      content:"";
+      position:absolute;
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: .25s;
+    }
+
+    .themeSwitch input:checked + .slider{
+      background: #111;
+    }
+    .themeSwitch input:checked + .slider::before{
+      transform: translateX(22px);
+    }
 
     main{
       height: 100vh;
@@ -43,6 +81,7 @@
       width: calc(100% - 48px);
       background: #fff;
       z-index: 5;
+      transition: background .25s, border-color .25s, box-shadow .25s;
     }
     .name{ font-size: 22px; font-weight: 800; margin-top: 4px; }
 
@@ -62,7 +101,6 @@
     }
     .hint { opacity:.7; margin-top: 10px; }
 
-    /* WARNING */
     .warning{
       position: fixed;
       top: 60px;
@@ -80,62 +118,8 @@
       z-index: 50;
       display: none;
     }
-    .warning.show{ display:block; animation: pop .18s ease-out; }
-    @keyframes pop {
-      from{ transform: translateX(-50%) scale(.92); opacity:.2 }
-      to{ transform: translateX(-50%) scale(1); opacity:1 }
-    }
+    .warning.show{ display:block; }
 
-    .duckInstruction{
-      position: fixed;
-      top: 112px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 50;
-      display: none;
-      font-weight: 950;
-      font-size: 15px;
-      background: rgba(255,255,255,.97);
-      border: 1px solid #eee;
-      border-radius: 999px;
-      padding: 8px 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,.10);
-      white-space: nowrap;
-      text-align: center;
-    }
-    .duckInstruction.show{ display:block; }
-
-    /* Pet countdown badge */
-    .petBadge{
-      position: fixed;
-      top: 162px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 55;
-      display: none;
-      font-weight: 900;
-      font-size: 13px;
-      background: rgba(255,255,255,.97);
-      border: 1px solid #eee;
-      border-radius: 999px;
-      padding: 8px 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,.10);
-      white-space: nowrap;
-    }
-    .petBadge.show{ display:block; }
-
-    /* Shake the score box */
-    .shake{ animation: shake 240ms ease-in-out; }
-    @keyframes shake{
-      0% { transform: translateX(0) }
-      20%{ transform: translateX(-6px) }
-      40%{ transform: translateX(6px) }
-      60%{ transform: translateX(-5px) }
-      80%{ transform: translateX(5px) }
-      100%{ transform: translateX(0) }
-    }
-
-    /* Layer for roaming critters (goose) */
     .duckLayer{
       position: absolute;
       inset: 0;
@@ -143,16 +127,13 @@
       z-index: 25;
     }
 
-    /* DUCK/GOOSE BASE */
     .duck{
       position: absolute;
       pointer-events: auto;
       cursor: pointer;
       user-select: none;
-      will-change: transform, left, top, opacity;
     }
 
-    /* Body only (NO LEGS) */
     .duck .body{
       display: inline-block;
       font-size: 44px;
@@ -161,29 +142,16 @@
       transform-origin: 50% 80%;
     }
 
-    /* Hugging spots around the counter */
     .hug1{ top: 18px; left: 8px; transform: rotate(-10deg); }
     .hug2{ top: 10px; right: 10px; transform: rotate(12deg); }
     .hug3{ bottom: 10px; left: 18px; transform: rotate(10deg); }
-    .hug4{ bottom: 8px; right: 18px; transform: rotate(-8deg); }
-    .hug5{ top: 52px; left: -6px; transform: rotate(-2deg); }
 
-    /* Walking in animation (from offscreen to a target spot) */
     .walking{ animation: walkIn 950ms ease-out forwards; }
     @keyframes walkIn{
       0%   { transform: translate(var(--fromX), var(--fromY)) scale(.95); opacity: .8; }
       100% { transform: translate(0,0) scale(1); opacity: 1; }
     }
 
-    /* Walk away (old; no longer used for normal ducks, kept safe) */
-    .leaving{ animation: walkAway 900ms ease-in forwards; }
-    @keyframes walkAway{
-      0%   { opacity: 1; transform: translate(0,0) scale(1); }
-      70%  { opacity: 1; transform: translate(90px,-40px) scale(.95); }
-      100% { opacity: 0; transform: translate(160px,-90px) scale(.85); }
-    }
-
-    /* Tiny toast */
     .toast{
       position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
       background: #111; color:#fff; padding:10px 14px; border-radius: 999px;
@@ -192,45 +160,7 @@
     }
     .toast.show{ opacity: 1; }
 
-    /* --- Golden goose --- */
-    .goose .body{ font-size: 46px; }
-    .golden .body{ text-shadow: 0 0 14px rgba(255, 200, 0, .9); }
-
-    .roaming{ animation: roam 1400ms linear infinite; }
-    @keyframes roam{
-      0%   { transform: translate(0,0) }
-      25%  { transform: translate(120px,-40px) }
-      50%  { transform: translate(40px,120px) }
-      75%  { transform: translate(-110px,30px) }
-      100% { transform: translate(0,0) }
-    }
-
-    .pet{ animation: petBounce 700ms ease-in-out infinite; }
-    @keyframes petBounce{
-      0%,100% { transform: translate(0,0) scale(1) }
-      50%     { transform: translate(0,-8px) scale(1.03) }
-    }
-
-    /* Goose peck animation (triggered by fast clicking) */
-    .peck .body{ animation: peck 180ms ease-in-out; }
-    @keyframes peck{
-      0%   { transform: translate(0,0) rotate(0deg) }
-      50%  { transform: translate(3px,6px) rotate(12deg) }
-      100% { transform: translate(0,0) rotate(0deg) }
-    }
-
-    /* --- Aggressive red duck --- */
-    .madDuck .body{
-      text-shadow: 0 0 14px rgba(255,0,0,.65);
-      filter: drop-shadow(0 12px 16px rgba(255,0,0,.18));
-    }
-    .lazyWalk{ animation: lazyIn 1800ms ease-out forwards; }
-    @keyframes lazyIn{
-      0%   { transform: translate(var(--fromX), var(--fromY)) scale(.96); opacity:.85; }
-      100% { transform: translate(0,0) scale(1); opacity:1; }
-    }
-
-    /* ------------------ CAGE ------------------ */
+    /* Cage */
     .cage{
       position: fixed;
       left: 14px;
@@ -245,14 +175,14 @@
       display: grid;
       grid-template-rows: auto 1fr;
       overflow: hidden;
-      user-select: none;
-      pointer-events: none; /* so it never blocks taps */
+      pointer-events: none;
+      transition: background .25s, border-color .25s;
     }
     .cageTop{
       display:flex;
       align-items:center;
       justify-content: space-between;
-      padding: 10px 10px 8px;
+      padding: 10px;
       border-bottom: 1px solid rgba(0,0,0,.10);
       font-weight: 900;
       font-size: 13px;
@@ -269,7 +199,6 @@
       position: relative;
       display:grid;
       place-items:center;
-      opacity: .95;
       font-size: 12px;
     }
     .cageBars{
@@ -286,23 +215,37 @@
       opacity:.35;
       pointer-events:none;
     }
-    .cageHint{
-      position: relative;
-      padding: 8px 10px;
-      text-align:center;
-      line-height: 1.2;
-    }
 
-    /* When we "send to cage" we temporarily make the duck fixed and animate it */
     .toCage{
       position: fixed !important;
-      left: var(--fx) !important;
-      top: var(--fy) !important;
-      transform: translate(0,0) scale(1) !important;
       transition: left 520ms ease, top 520ms ease, transform 520ms ease, opacity 520ms ease;
       z-index: 80 !important;
       pointer-events: none !important;
-      opacity: 1;
+    }
+
+    /* ---------- Dark Mode ---------- */
+    body.dark{
+      background: #0f1115;
+      color: #eaeaf0;
+    }
+    body.dark header{
+      background: #141722;
+      border-bottom-color: #222;
+    }
+    body.dark nav a{ color: #eaeaf0; }
+    body.dark nav a:hover{ background:#1d2133; }
+    body.dark .card{
+      background: #141722;
+      border-color: #222;
+      box-shadow: 0 10px 30px rgba(0,0,0,.6);
+    }
+    body.dark .cage{
+      background:#141722;
+      border-color:#333;
+    }
+    body.dark .toast{
+      background:#eee;
+      color:#111;
     }
   </style>
 </head>
@@ -311,22 +254,20 @@
   <header>
     <div class="brand">Tap Leaderboard</div>
     <nav>
-      <a href="index.html">Home</a>
-      <a href="leaderboard.html">Leaderboard</a>
+      <a href="#">Home</a>
+      <a href="#">Leaderboard</a>
       <span class="pill" id="navUser"></span>
-      <a href="auth.html" id="authLink">Login / Sign up</a>
-      <a href="#" id="logoutLink" style="display:none;">Logout</a>
+
+      <!-- Theme toggle -->
+      <label class="themeSwitch">
+        <input type="checkbox" id="themeToggle">
+        <span class="slider"></span>
+      </label>
     </nav>
   </header>
 
   <div class="warning" id="warning">DUCKS INVADING!!</div>
-  <div class="duckInstruction" id="instruction">
-    <b>TAP THE DUCK → IT GETS CAPTURED IN THE CAGE</b><br/>
-    (Golden goose: <b>DOUBLE</b>-click to pet) • (Red duck: <b>TRIPLE</b>-click to cage)
-  </div>
-  <div class="petBadge" id="petBadge">PET ACTIVE: 3:00</div>
 
-  <!-- CAGE (bottom-left) -->
   <div class="cage" id="cage">
     <div class="cageTop">
       <span>Duck Cage</span>
@@ -334,7 +275,7 @@
     </div>
     <div class="cageBody">
       <div class="cageBars"></div>
-      <div class="cageHint">Captured ducks fly here 🦆➡️</div>
+      <div>Captured ducks fly here 🦆➡️</div>
     </div>
   </div>
 
@@ -342,62 +283,27 @@
     <div class="duckLayer" id="duckLayer"></div>
 
     <div class="card">
-      <div class="pill" id="statusLine">Not logged in</div>
+      <div class="pill" id="statusLine">Tap anywhere!</div>
       <div class="name" id="displayName">Guest</div>
-
-      <div class="countWrap" id="countWrap">
+      <div class="countWrap">
         <div class="count" id="count">0</div>
       </div>
-
-      <div class="hint" id="hint">Log in to be counted on the leaderboard.</div>
+      <div class="hint">Tap/click anywhere to add +1</div>
     </div>
   </main>
 
   <div class="toast" id="toast"></div>
 
   <script>
-    // --------- localStorage ----------
-    const LS_USERS = "tap_users";
-    const LS_SESSION = "tap_session";
-    function loadUsers(){ return JSON.parse(localStorage.getItem(LS_USERS) || "{}"); }
-    function saveUsers(users){ localStorage.setItem(LS_USERS, JSON.stringify(users)); }
-    function getSession(){ return JSON.parse(localStorage.getItem(LS_SESSION) || "null"); }
-    function clearSession(){ localStorage.removeItem(LS_SESSION); }
-
-    // --------- Admin ----------
-    const ADMIN_USERNAME = "yamoon";
-    function isAdmin(){
-      const sess = getSession();
-      return !!(sess && sess.username === ADMIN_USERNAME);
-    }
-
-    // --------- UI refs ----------
+    const countEl = document.getElementById("count");
     const tapArea = document.getElementById("tapArea");
     const duckLayer = document.getElementById("duckLayer");
-    const warning = document.getElementById("warning");
-    const instruction = document.getElementById("instruction");
-    const countWrap = document.getElementById("countWrap");
-
-    const navUser = document.getElementById("navUser");
-    const authLink = document.getElementById("authLink");
-    const logoutLink = document.getElementById("logoutLink");
-
-    const statusLine = document.getElementById("statusLine");
-    const displayNameEl = document.getElementById("displayName");
-    const countEl = document.getElementById("count");
-    const hintEl = document.getElementById("hint");
-
-    const toast = document.getElementById("toast");
-    const petBadge = document.getElementById("petBadge");
-
-    // Cage refs
     const cage = document.getElementById("cage");
     const cageCountEl = document.getElementById("cageCount");
-    let cagedCount = 0;
-    function bumpCageCount(){
-      cagedCount++;
-      cageCountEl.textContent = String(cagedCount);
-    }
+    const toast = document.getElementById("toast");
+
+    let count = 0;
+    let caged = 0;
 
     function showToast(msg){
       toast.textContent = msg;
@@ -405,428 +311,70 @@
       setTimeout(() => toast.classList.remove("show"), 900);
     }
 
-    function shakeScore(){
-      countWrap.classList.remove("shake");
-      void countWrap.offsetWidth; // reflow trick
-      countWrap.classList.add("shake");
-    }
-
-    // --------- Duck invasion logic ----------
-    const TAP_STEP = 75;
-    const DUCKS_PER_INVASION = 3;
-
-    const GOOSE_CHANCE = 0.10;     // 10%
-    const MAD_DUCK_CHANCE = 0.12;  // 12%
-
-    function chance(p){ return Math.random() < p; }
-
-    // Triple click helper
-    function makeTripleClickHandler(onTriple){
-      let clicks = 0;
-      let timer = null;
-      return (e) => {
-        e.stopPropagation();
-        clicks++;
-        if (timer) clearTimeout(timer);
-        timer = setTimeout(() => { clicks = 0; }, 650);
-        if (clicks >= 3){
-          clicks = 0;
-          if (timer) clearTimeout(timer);
-          onTriple();
-        }
-      };
-    }
-
-    let lastSpawnCheckpoint = 0;
-
-    let critters = [];            // active critters (ducks + goose)
-    let lockAfterArrival = false; // invasion started; lock after arrival/hug
-    let blocked = false;          // background locked
-
-    function setBlocked(isBlocked){
-      if (isAdmin()){
-        blocked = false;
-        tapArea.classList.remove("blocked");
-        warning.classList.remove("show");
-        instruction.classList.remove("show");
-        return;
-      }
-      blocked = isBlocked;
-      tapArea.classList.toggle("blocked", blocked);
-      warning.classList.toggle("show", blocked);
-      instruction.classList.toggle("show", blocked);
-    }
-
-    function activeCritterCount(){ return critters.length; }
-    function pickHugClass(i){
-      const classes = ["hug1","hug2","hug3","hug4","hug5"];
-      return classes[i % classes.length];
-    }
-
-    function createSadSound(){
-      // simple "sad" descending beep
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "triangle";
-      o.frequency.setValueAtTime(420, ctx.currentTime);
-      o.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.22);
-      g.gain.setValueAtTime(0.0001, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.26);
-      o.connect(g); g.connect(ctx.destination);
-      o.start();
-      o.stop(ctx.currentTime + 0.28);
-      o.onended = () => ctx.close();
-    }
-
-    // --------- Send a critter to the cage ----------
-    function sendToCage(el, onDone){
-      if (!el || el.dataset.caging === "1") return;
-      el.dataset.caging = "1";
-
-      // stop any entry animation classes
-      el.classList.remove("walking");
-      el.classList.remove("lazyWalk");
-      el.classList.remove("roaming");
-
-      // current position (viewport)
-      const r = el.getBoundingClientRect();
-      const startX = r.left;
-      const startY = r.top;
-
-      // cage target (center-ish)
-      const cr = cage.getBoundingClientRect();
-      const targetX = cr.left + cr.width * 0.55;
-      const targetY = cr.top + cr.height * 0.55;
-
-      // make fixed at current spot
-      el.style.setProperty("--fx", startX + "px");
-      el.style.setProperty("--fy", startY + "px");
-      el.classList.add("toCage");
-
-      // force reflow so transition triggers
-      void el.offsetWidth;
-
-      // animate into cage
-      el.style.left = targetX + "px";
-      el.style.top  = targetY + "px";
-      el.style.transform = "scale(0.25)";
-      el.style.opacity = "0.1";
-
-      setTimeout(() => {
-        bumpCageCount();
-        if (typeof onDone === "function") onDone();
-      }, 560);
-    }
-
-    // --------- Goose pet countdown ----------
-    let petEndAt = 0;
-    let petTimer = null;
-
-    function fmtTime(ms){
-      const s = Math.max(0, Math.floor(ms / 1000));
-      const m = Math.floor(s / 60);
-      const r = s % 60;
-      return `${m}:${String(r).padStart(2,"0")}`;
-    }
-
-    function startPetCountdown(){
-      petBadge.classList.add("show");
-      if (petTimer) clearInterval(petTimer);
-      petTimer = setInterval(() => {
-        const left = petEndAt - Date.now();
-        if (left <= 0){
-          petBadge.classList.remove("show");
-          clearInterval(petTimer);
-          petTimer = null;
-          return;
-        }
-        petBadge.textContent = `PET ACTIVE: ${fmtTime(left)}`;
-      }, 250);
-    }
-
-    // --------- Golden Goose ----------
-    function spawnGoldenGoose(){
-      const goose = document.createElement("div");
-      goose.className = "duck goose golden roaming";
-      goose.innerHTML = `<span class="body">🪿</span>`;
-      duckLayer.appendChild(goose);
-
-      // Place near the counter, then it roams
-      const rect = countWrap.getBoundingClientRect();
-      const mainRect = tapArea.getBoundingClientRect();
-      goose.style.left = (rect.left - mainRect.left + 160) + "px";
-      goose.style.top  = (rect.top  - mainRect.top  - 40) + "px";
-
-      // Peck animation when clicking at least 2 clicks/sec (<= 500ms between clicks)
-      let lastClickAt = 0;
-      goose.addEventListener("pointerdown", (e) => {
-        e.stopPropagation();
-        const now = Date.now();
-        if (now - lastClickAt <= 500){
-          goose.classList.add("peck");
-          setTimeout(() => goose.classList.remove("peck"), 190);
-        }
-        lastClickAt = now;
-      });
-
-      let petInterval = null;
-
-      goose.ondblclick = (e) => {
-        e.stopPropagation();
-        if (goose.classList.contains("pet")) return;
-
-        goose.classList.remove("roaming");
-        goose.classList.add("pet");
-
-        showToast("Golden goose is your pet 🪿✨ (+3 / 3s)");
-
-        // 3 minutes countdown
-        petEndAt = Date.now() + 180000;
-        petBadge.textContent = "PET ACTIVE: 3:00";
-        startPetCountdown();
-
-        // Auto-clicks: +3 taps every 3 seconds for 3 mins
-        petInterval = setInterval(() => {
-          const sess = getSession();
-          const users = loadUsers();
-          if (!sess || !users[sess.username]) return;
-          users[sess.username].taps = (users[sess.username].taps || 0) + 3;
-          saveUsers(users);
-          countEl.textContent = String(users[sess.username].taps);
-          refresh();
-        }, 3000);
-
-        setTimeout(() => {
-          if (petInterval) clearInterval(petInterval);
-          goose.classList.remove("pet");
-          goose.classList.add("roaming");
-          petBadge.classList.remove("show");
-          showToast("Golden goose ran away 🪿💨");
-        }, 180000);
-      };
-
-      critters.push(goose);
-    }
-
-    // --------- Aggressive Red Duck ----------
-    function spawnMadDuck(){
+    function spawnDuck(){
       const duck = document.createElement("div");
-      duck.className = "duck madDuck";
+      duck.className = "duck walking hug1";
       duck.innerHTML = `<span class="body">🦆</span>`;
+      duck.style.setProperty("--fromX", "-200px");
+      duck.style.setProperty("--fromY", "-100px");
+      duck.style.left = "100px";
+      duck.style.top = "100px";
+      tapArea.appendChild(duck);
 
-      const hugClass = pickHugClass(activeCritterCount());
-      duck.classList.add(hugClass);
+      duck.addEventListener("pointerdown", (e) => {
+        e.stopPropagation();
 
-      const fromLeft = Math.random() < 0.5;
-      const fromTop  = Math.random() < 0.5;
-      duck.style.setProperty("--fromX", fromLeft ? "-240px" : "240px");
-      duck.style.setProperty("--fromY", fromTop  ? "-160px" : "160px");
-      duck.classList.add("lazyWalk");
+        const r = duck.getBoundingClientRect();
+        const cr = cage.getBoundingClientRect();
 
-      countWrap.appendChild(duck);
-      critters.push(duck);
+        duck.classList.add("toCage");
+        duck.style.left = r.left + "px";
+        duck.style.top = r.top + "px";
+        duck.style.transform = "scale(1)";
+        duck.style.opacity = "1";
 
-      let damageInterval = null;
+        void duck.offsetWidth;
 
-      setTimeout(() => {
-        duck.classList.remove("lazyWalk");
+        duck.style.left = (cr.left + cr.width * 0.6) + "px";
+        duck.style.top = (cr.top + cr.height * 0.6) + "px";
+        duck.style.transform = "scale(0.2)";
+        duck.style.opacity = "0.1";
 
-        if (!blocked) setBlocked(true);
-
-        // pecks score box repeatedly
-        damageInterval = setInterval(() => {
-          const sess = getSession();
-          const users = loadUsers();
-          if (!sess || !users[sess.username]) return;
-
-          users[sess.username].taps = (users[sess.username].taps || 0) - 80;
-          if (users[sess.username].taps < 0) users[sess.username].taps = 0;
-          saveUsers(users);
-
-          countEl.textContent = String(users[sess.username].taps);
-
-          shakeScore();
-          showToast("😡 Red duck PECKS! -80");
-          refresh();
-        }, 1700);
-      }, 1800);
-
-      // TRIPLE click to cage
-      duck.addEventListener("pointerdown", makeTripleClickHandler(() => {
-        createSadSound();
-        if (damageInterval) clearInterval(damageInterval);
-
-        sendToCage(duck, () => {
-          duck.remove();
-          critters = critters.filter(d => d !== duck);
-          if (critters.length === 0){
-            lockAfterArrival = false;
-            setBlocked(false);
-          }
-          refresh();
-        });
-      }));
-    }
-
-    // --------- Spawn invasion ----------
-    function spawnInvasion(){
-      if (isAdmin()) return;
-      if (lockAfterArrival || blocked) return;
-      lockAfterArrival = true;
-
-      // Base: 3 hugging ducks
-      for (let i = 0; i < DUCKS_PER_INVASION; i++){
-        const duck = document.createElement("div");
-        duck.className = "duck";
-        duck.innerHTML = `<span class="body">🦆</span>`;
-
-        const hugClass = pickHugClass(activeCritterCount() + i);
-        duck.classList.add(hugClass);
-
-        const fromLeft = Math.random() < 0.5;
-        const fromTop = Math.random() < 0.5;
-        duck.style.setProperty("--fromX", fromLeft ? "-220px" : "220px");
-        duck.style.setProperty("--fromY", fromTop ? "-160px" : "160px");
-        duck.classList.add("walking");
-
-        // tap duck => cage
-        duck.addEventListener("pointerdown", (e) => {
-          e.stopPropagation();
-          if (duck.dataset.caging === "1") return;
-
-          createSadSound();
-
-          sendToCage(duck, () => {
-            duck.remove();
-            critters = critters.filter(d => d !== duck);
-            if (critters.length === 0){
-              lockAfterArrival = false;
-              setBlocked(false);
-            }
-            refresh();
-          });
-        });
-
-        countWrap.appendChild(duck);
-        critters.push(duck);
-
-        // After walk-in ends -> LOCK
         setTimeout(() => {
-          duck.classList.remove("walking");
-          if (lockAfterArrival && !blocked){
-            setBlocked(true);
-          }
-          refresh();
-        }, 950);
-      }
-
-      // 12% chance: aggressive red duck
-      if (chance(MAD_DUCK_CHANCE)){
-        spawnMadDuck();
-      }
-
-      // 10% chance: golden goose
-      if (chance(GOOSE_CHANCE)){
-        spawnGoldenGoose();
-      }
-
-      refresh();
+          duck.remove();
+          caged++;
+          cageCountEl.textContent = caged;
+        }, 550);
+      });
     }
 
-    // --------- Auth / profile ----------
-    function refresh(){
-      const sess = getSession();
-      const users = loadUsers();
-
-      if (!sess || !users[sess.username]){
-        navUser.textContent = "";
-        authLink.style.display = "inline";
-        logoutLink.style.display = "none";
-        statusLine.textContent = "Not logged in";
-        displayNameEl.textContent = "Guest";
-        countEl.textContent = "0";
-        hintEl.textContent = "Log in to be counted on the leaderboard.";
-        return;
+    tapArea.addEventListener("pointerdown", () => {
+      count++;
+      countEl.textContent = count;
+      if (count % 10 === 0){
+        spawnDuck();
+        showToast("A duck appeared!");
       }
+    });
 
-      const u = users[sess.username];
-      const name = u.displayName || sess.username;
+    // --------- Theme toggle ----------
+    const themeToggle = document.getElementById("themeToggle");
+    const savedTheme = localStorage.getItem("theme");
 
-      navUser.textContent = isAdmin() ? `Admin: ${name}` : `Hi, ${name}`;
-      authLink.style.display = "none";
-      logoutLink.style.display = "inline";
+    if (savedTheme === "dark"){
+      document.body.classList.add("dark");
+      themeToggle.checked = true;
+    }
 
-      if (isAdmin()){
-        statusLine.textContent = "Admin mode (no ducks). Tap freely.";
-        hintEl.textContent = "You are immune to invasions.";
-      } else if (blocked){
-        statusLine.textContent = "Ducks are hugging the counter!";
-        hintEl.textContent = "Background locked. Tap ducks to capture them in the cage.";
+    themeToggle.addEventListener("change", () => {
+      if (themeToggle.checked){
+        document.body.classList.add("dark");
+        localStorage.setItem("theme", "dark");
       } else {
-        statusLine.textContent = "Tap anywhere!";
-        hintEl.textContent = "Tap/click anywhere to add +1";
+        document.body.classList.remove("dark");
+        localStorage.setItem("theme", "light");
       }
-
-      countEl.textContent = String(u.taps || 0);
-      displayNameEl.textContent = name;
-    }
-
-    logoutLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      clearSession();
-
-      setBlocked(false);
-      lockAfterArrival = false;
-
-      // remove all critters
-      critters.forEach(d => d.remove());
-      critters = [];
-
-      // stop pet timer
-      if (petTimer) clearInterval(petTimer);
-      petTimer = null;
-      petBadge.classList.remove("show");
-
-      refresh();
-      showToast("Logged out");
     });
-
-    // --------- Tap logic ----------
-    tapArea.addEventListener("pointerdown", (e) => {
-      const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
-      if (["a","button","input","label"].includes(tag)) return;
-
-      const sess = getSession();
-      const users = loadUsers();
-      if (!sess || !users[sess.username]){
-        showToast("Log in first to start counting!");
-        return;
-      }
-
-      if (blocked && !isAdmin()){
-        showToast("Tap the ducks to capture them in the cage.");
-        return;
-      }
-
-      users[sess.username].taps = (users[sess.username].taps || 0) + 1;
-      saveUsers(users);
-      countEl.textContent = String(users[sess.username].taps);
-
-      const taps = users[sess.username].taps;
-      const checkpoint = Math.floor(taps / TAP_STEP);
-      if (!isAdmin() && checkpoint > lastSpawnCheckpoint){
-        lastSpawnCheckpoint = checkpoint;
-        spawnInvasion();
-      }
-
-      refresh();
-    });
-
-    // Init
-    setBlocked(false);
-    refresh();
   </script>
 
 </body>
