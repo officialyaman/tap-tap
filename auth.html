@@ -1,203 +1,90 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Login / Sign up</title>
+<script>
+  const LS_USERS = "tap_users";
+  const LS_SESSION = "tap_session";
 
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: system-ui, Arial;
-      min-height: 100vh;
-      background: #fafafa;
-    }
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
-      background: #fff;
-      border-bottom: 1px solid #eee;
-    }
-    nav a {
-      text-decoration: none;
-      color: #111;
-      padding: 6px 10px;
-      border-radius: 10px;
-    }
-    nav a:hover {
-      background: #f3f3f3;
-    }
-    main {
-      display: grid;
-      place-items: center;
-      padding: 24px;
-    }
-    .wrap {
-      display: grid;
-      gap: 16px;
-      width: min(900px, 100%);
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    }
-    .card {
-      background: #fff;
-      border: 1px solid #eee;
-      border-radius: 16px;
-      padding: 18px;
-      box-shadow: 0 6px 24px rgba(0,0,0,.05);
-    }
-    h2 {
-      margin: 0 0 10px;
-    }
-    label {
-      display: block;
-      font-size: 13px;
-      opacity: .75;
-      margin-top: 10px;
-    }
-    input {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid #ddd;
-      margin-top: 6px;
-      font-size: 14px;
-    }
-    button {
-      width: 100%;
-      margin-top: 14px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid #ddd;
-      background: #111;
-      color: #fff;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    button:hover { opacity: .92; }
-    .msg { margin-top: 10px; font-size: 13px; }
-    .ok { color: #0a7; }
-    .bad { color: #c22; }
-    .note {
-      font-size: 12px;
-      opacity: .65;
-      margin-top: 10px;
-    }
-  </style>
-</head>
+  function loadUsers() {
+    return JSON.parse(localStorage.getItem(LS_USERS) || "{}");
+  }
+  function saveUsers(users) {
+    localStorage.setItem(LS_USERS, JSON.stringify(users));
+  }
+  function setSession(sess) {
+    localStorage.setItem(LS_SESSION, JSON.stringify(sess));
+  }
 
-<body>
-  <header>
-    <div style="font-weight:800;">Tap Leaderboard</div>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="leaderboard.html">Leaderboard</a>
-    </nav>
-  </header>
+  // ✅ Grab elements safely
+  const suUser = document.getElementById("suUser");
+  const suPass = document.getElementById("suPass");
+  const signupBtn = document.getElementById("signupBtn");
+  const suMsg = document.getElementById("suMsg");
 
-  <main>
-    <div class="wrap">
+  const liUser = document.getElementById("liUser");
+  const liPass = document.getElementById("liPass");
+  const loginBtn = document.getElementById("loginBtn");
+  const liMsg = document.getElementById("liMsg");
 
-      <!-- SIGN UP -->
-      <div class="card">
-        <h2>Sign up</h2>
+  // Optional: press Enter to submit
+  suPass.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") signupBtn.click();
+  });
+  liPass.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") loginBtn.click();
+  });
 
-        <label>Username</label>
-        <input id="suUser" placeholder="user3432" />
+  // SIGN UP
+  signupBtn.addEventListener("click", () => {
+    const username = suUser.value.trim();
+    const password = suPass.value;
 
-        <label>Password</label>
-        <input id="suPass" type="password" placeholder="Create a password" />
-
-        <button id="signupBtn">Create account</button>
-        <div class="msg" id="suMsg"></div>
-
-        <div class="note">
-          No real names required. Username only.
-        </div>
-      </div>
-
-      <!-- LOGIN -->
-      <div class="card">
-        <h2>Log in</h2>
-
-        <label>Username</label>
-        <input id="liUser" placeholder="user3432" />
-
-        <label>Password</label>
-        <input id="liPass" type="password" placeholder="Your password" />
-
-        <button id="loginBtn">Log in</button>
-        <div class="msg" id="liMsg"></div>
-      </div>
-
-    </div>
-  </main>
-
-  <script>
-    const LS_USERS = "tap_users";
-    const LS_SESSION = "tap_session";
-
-    function loadUsers() {
-      return JSON.parse(localStorage.getItem(LS_USERS) || "{}");
-    }
-    function saveUsers(users) {
-      localStorage.setItem(LS_USERS, JSON.stringify(users));
-    }
-    function setSession(sess) {
-      localStorage.setItem(LS_SESSION, JSON.stringify(sess));
+    if (!username || !password) {
+      suMsg.className = "msg bad";
+      suMsg.textContent = "Fill all fields.";
+      return;
     }
 
-    // SIGN UP
-    signupBtn.onclick = () => {
-      const username = suUser.value.trim();
-      const password = suPass.value;
+    // Simple username rules (prevents weird bugs)
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+      suMsg.className = "msg bad";
+      suMsg.textContent = "Use 3–20 chars: letters, numbers, underscore.";
+      return;
+    }
 
-      if (!username || !password) {
-        suMsg.className = "msg bad";
-        suMsg.textContent = "Fill all fields.";
-        return;
-      }
+    const users = loadUsers();
+    if (users[username]) {
+      suMsg.className = "msg bad";
+      suMsg.textContent = "Username already exists.";
+      return;
+    }
 
-      const users = loadUsers();
-      if (users[username]) {
-        suMsg.className = "msg bad";
-        suMsg.textContent = "Username already exists.";
-        return;
-      }
-
-      users[username] = {
-        displayName: username,
-        password: password,
-        taps: 0
-      };
-
-      saveUsers(users);
-      setSession({ username });
-
-      suMsg.className = "msg ok";
-      suMsg.textContent = "Account created!";
-      setTimeout(() => location.href = "index.html", 600);
+    users[username] = {
+      displayName: username,
+      password: password,
+      taps: 0
     };
 
-    // LOGIN
-    loginBtn.onclick = () => {
-      const username = liUser.value.trim();
-      const password = liPass.value;
+    saveUsers(users);
+    setSession({ username });
 
-      const users = loadUsers();
-      if (!users[username] || users[username].password !== password) {
-        liMsg.className = "msg bad";
-        liMsg.textContent = "Wrong username or password.";
-        return;
-      }
+    suMsg.className = "msg ok";
+    suMsg.textContent = "Account created!";
+    setTimeout(() => (location.href = "index.html"), 600);
+  });
 
-      setSession({ username });
-      liMsg.className = "msg ok";
-      liMsg.textContent = "Logged in!";
-      setTimeout(() => location.href = "index.html", 600);
-    };
-  </script>
-</body>
-</html>
+  // LOGIN
+  loginBtn.addEventListener("click", () => {
+    const username = liUser.value.trim();
+    const password = liPass.value;
+
+    const users = loadUsers();
+    if (!users[username] || users[username].password !== password) {
+      liMsg.className = "msg bad";
+      liMsg.textContent = "Wrong username or password.";
+      return;
+    }
+
+    setSession({ username });
+    liMsg.className = "msg ok";
+    liMsg.textContent = "Logged in!";
+    setTimeout(() => (location.href = "index.html"), 600);
+  });
+</script>
